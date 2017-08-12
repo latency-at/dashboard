@@ -1,0 +1,4 @@
+#!/bin/sh
+exec /opt/grafana/bin/grafana-server \
+  -config /etc/grafana/config.ini \
+  -homepath /opt/grafana

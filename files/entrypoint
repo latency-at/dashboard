@@ -1,0 +1,73 @@
+#!/bin/bash
+set -euo pipefail
+
+PROMETHEUS_URL="${PROMETHEUS_URL:-http://localhost:9090}"
+grafana="http://$GF_SECURITY_ADMIN_USER:$GF_SECURITY_ADMIN_PASSWORD@localhost:3000"
+
+api() {
+  method=$1; shift
+  path=$1; shift
+  curl -sX "$method" -H "Content-Type: application/json" "$grafana/$path" "$@"
+}
+
+sv_stop() {
+  echo "stopping"
+  for s in /etc/service/*/; do
+      sv stop $s
+  done
+}
+
+trap "" SIGCHLD
+trap "sv_stop; exit" SIGTERM SIGINT
+runsvdir /etc/service &
+
+echo -n "Waiting for grafana" >&2
+while ! api GET api/datasources -f; do
+  sleep 1
+  echo -n .
+done
+echo
+
+# Create data source
+cat << EOF | api POST api/datasources -d @- 
+{
+  "name": "prometheus",
+  "type": "prometheus",
+  "url": "$PROMETHEUS_URL",
+  "access": "proxy",
+  "isDefault": true
+}
+EOF
+
+# Create dashboards
+TMP=$(mktemp)
+for p in /etc/grafana/dashboards/*.json; do
+  cat <<EOF | api POST api/dashboards/import -d @- | jq -r .importedUri > "$TMP"
+{
+  "dashboard": $(cat "$p"),
+  "overwrite": true,
+  "inputs": [{
+    "name": "DS_PROMETHEUS",
+    "type": "datasource",
+    "pluginId": "prometheus",
+    "value": "prometheus"
+  }]
+}
+EOF
+#  id=$(api GET api/dashboards/$(cat "$TMP") | jq -r .dashboard.id)
+#  api POST "api/users/stars/dashboard/$id"
+done
+
+homeId=$(api GET api/dashboards/db/home | \
+  jq -r .dashboard.id)
+
+cat <<EOF | curl -sX PUT -H 'Content-Type: application/json' \
+  "$grafana/api/org/preferences" -d @-
+{
+  "theme": "dark",
+  "homeDashboardId": $homeId,
+  "timezone": "utc"
+}
+EOF
+
+wait

@@ -1,0 +1,47 @@
+# my global config
+global:
+  scrape_interval:     15s # Set the scrape interval to every 15 seconds. Default is every 1 minute.
+  evaluation_interval: 15s # Evaluate rules every 15 seconds. The default is every 1 minute.
+  scrape_timeout: 15s #  is set to the global default (10s).
+
+
+scrape_configs:
+  # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
+  - job_name: 'prometheus'
+
+    # metrics_path defaults to '/metrics'
+    # scheme defaults to 'http'.
+
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'latency-at'
+    bearer_token: 'your-token'
+    metrics_path: /probe
+    scrape_interval: 60s
+    params:
+      module: [http_2xx]  # Look for a HTTP 200 response.
+    static_configs:
+      - targets:
+        - https://latency.at@fra1.do
+
+    relabel_configs:
+      - source_labels: [__address__]
+        regex: (.*)@(.*)(:80)?
+        target_label: __param_target
+        replacement: ${1}
+      - source_labels: [__param_target]
+        regex: (.*)
+        target_label: instance
+        replacement: ${1}
+      - source_labels: [__address__]
+        regex: .*@(.*)
+        target_label: region
+        replacement: ${1}
+      - source_labels: [region]
+        regex: (.*)
+        target_label: __address__
+        replacement: ${1}.mon.latency.at
+      - source_labels: []
+        target_label: __scheme__
+        replacement: https
