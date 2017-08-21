@@ -18,7 +18,7 @@ RUN mkdir -p /opt/grafana && \
     tar --strip-components 1 -C /opt/grafana -xzvf -
 
 ## Prometheus
-ENV PROMETHEUS_VERSION 1.7.1
+ENV PROMETHEUS_VERSION 2.0.0-beta.2
 ENV PROMETHEUS_URL https://github.com/prometheus/prometheus/releases/download/v${PROMETHEUS_VERSION}/prometheus-${PROMETHEUS_VERSION}.linux-amd64.tar.gz
 RUN mkdir /opt/prometheus && \
   curl -Lsf $PROMETHEUS_URL | \

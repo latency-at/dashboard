@@ -1,8 +1,6 @@
 #!/bin/sh
 exec /opt/prometheus/prometheus \
-  -config.file /etc/prometheus/prometheus.yml \
-  -storage.local.path /data \
-  -web.listen-address :9090 \
-  -storage.local.retention 24h \
-  -storage.local.target-heap-size 90000000 \
-  -storage.local.chunk-encoding-version 2
+  --config.file /etc/prometheus/prometheus.yml \
+  --storage.tsdb.path /data \
+  --web.listen-address 0.0.0.0:9090 \
+  --storage.tsdb.retention 24h
