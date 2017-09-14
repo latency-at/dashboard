@@ -30,4 +30,4 @@ ENV GF_SECURITY_ADMIN_PASSWORD admin
 COPY files/ /etc/
 VOLUME [ "/data" ]
 ENTRYPOINT [ "/etc/entrypoint" ]
-EXPOSE 3000
+EXPOSE 3000 9090
